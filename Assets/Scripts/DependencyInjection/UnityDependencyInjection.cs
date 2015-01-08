@@ -10,10 +10,9 @@ namespace RamjetAnvil.DependencyInjection
     public static class UnityDependencyInjection
     {
         public static void InjectAll(GameObject gameObject, DependencyContainer diContainer) {
-            var components = gameObject.GetComponents<Component>();
+            var components = gameObject.GetComponentsInChildren<Component>(includeInactive: true);
             for (int i = 0; i < components.Length; i++) {
                 var component = components[i];
-                Debug.Log(component);
                 DependencyInjection.InjectAll(component, diContainer);    
             }
         }
