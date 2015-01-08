@@ -61,7 +61,7 @@ public class Something : MonoBehaviour {
 
 We can then initialize a GameObject with its dependencies like this:
 
-```c#
+``` c#
 var go = new GameObject();
 go.AddComponent<Something>();
 var diContainer = new DependencyContainer(new Dictionary<string, object> {
