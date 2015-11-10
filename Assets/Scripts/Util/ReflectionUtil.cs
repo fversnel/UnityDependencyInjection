@@ -9,21 +9,18 @@ namespace RamjetAnvil.Util
             yield return type;
 
             // is there any base type?
-            if ((type == null) || (type.BaseType == null))
-            {
+            if ((type == null) || (type.BaseType == null)) {
                 yield break;
             }
 
             // return all implemented or inherited interfaces
-            foreach (var interfaceType in type.GetInterfaces())
-            {
+            foreach (var interfaceType in type.GetInterfaces()) {
                 yield return interfaceType;
             }
 
             // return all inherited types
             var currentBaseType = type.BaseType;
-            while (currentBaseType != null)
-            {
+            while (currentBaseType != null) {
                 yield return currentBaseType;
                 currentBaseType = currentBaseType.BaseType;
             }

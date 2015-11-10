@@ -1,24 +1,25 @@
-﻿namespace RamjetAnvil.DependencyInjection
-{
-    public struct Dependency
-    {
-        private readonly string _name;
-        private readonly object _instance;
+﻿using System;
 
-        public Dependency(string name, object instance)
-        {
-            _name = name;
-            _instance = instance;
+namespace RamjetAnvil.DependencyInjection {
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+    public class Dependency : Attribute {
+        private readonly string _name;
+
+        public Dependency() {
+            _name = null;
         }
 
-        public string Name
-        {
+        public Dependency(string name) {
+            _name = name;
+        }
+
+        public string Name {
             get { return _name; }
         }
 
-        public object Instance
-        {
-            get { return _instance; }
+        public override string ToString() {
+            return _name ?? "";
         }
     }
 }
