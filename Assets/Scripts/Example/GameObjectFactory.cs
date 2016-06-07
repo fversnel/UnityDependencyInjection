@@ -9,7 +9,7 @@ public class GameObjectFactory : MonoBehaviour {
 
     [SerializeField] private GameObject _playerPrefab;
 
-    public GameObject CreatePlayer(IClock gameClock, IClock fixedClock) {
+    public GameObject CreatePlayer(UnityClock gameClock, UnityFixedClock fixedClock) {
         var go = (GameObject)Instantiate(_playerPrefab);
 
         var diContainer = new DependencyContainer(new Dictionary<string, object> {
@@ -17,7 +17,7 @@ public class GameObjectFactory : MonoBehaviour {
             {"fixedClock", fixedClock}
         });
 
-        UnityDependencyInjection.InjectAll(go, diContainer);
+        DependencyInjection.Inject(go, diContainer);
 
         return go;
     }

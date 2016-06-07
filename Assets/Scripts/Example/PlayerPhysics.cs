@@ -8,14 +8,9 @@ using UnityEngine;
 
 public class PlayerPhysics : MonoBehaviour {
 
-    [SerializeField] private IClock _clock;
+    [Dependency("fixedClock"), SerializeField] private UnityFixedClock _clock;
 
     void FixedUpdate() {
         Debug.Log("fixed update: " + _clock.DeltaTime);
-    }
-
-    [DependencyInfo("fixedClock")]
-    public IClock Clock {
-        set { _clock = value; }
     }
 }
