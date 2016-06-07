@@ -18,8 +18,7 @@ public class UnityDependencyResolver : MonoBehaviour {
 #if UNITY_EDITOR
     void Update() {
         if (_lastUpdated + _updateIntervalInS < Time.realtimeSinceStartup) {
-            Debug.Log("dingon");
-            Resolve();    
+            Resolve();
         }
     }
 #endif
