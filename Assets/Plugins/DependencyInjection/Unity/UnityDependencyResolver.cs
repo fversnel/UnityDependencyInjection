@@ -1,40 +1,31 @@
-﻿using System.Collections;
+﻿using System.Linq;
 using RamjetAnvil.DependencyInjection;
 using RamjetAnvil.DependencyInjection.Unity;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [ExecuteInEditMode]
 public class UnityDependencyResolver : MonoBehaviour {
 
-    [SerializeField] private float _updateIntervalInS = 60f;
-
     private DependencyContainer _dependencyContainer;
-    private float _lastUpdated;
 
     void Awake() {
         Resolve();
     }
 
-#if UNITY_EDITOR
-    void Update() {
-        if (_lastUpdated + _updateIntervalInS < Time.realtimeSinceStartup) {
-            Resolve();
-        }
-    }
-#endif
-
     public DependencyContainer DependencyContainer {
         get { return _dependencyContainer; }
     }
-
     
     public void Resolve() {
         _dependencyContainer = FindDependencies();
-        var sceneObjects = FindObjectsOfType<GameObject>();
-        foreach (var sceneObject in sceneObjects) {
-            DependencyInjection.Inject(sceneObject, _dependencyContainer, overrideExisting: false, traverseHierarchy: false);    
+        var rootSceneObjects = Enumerable.Range(0, SceneManager.sceneCount)
+            .Select(sceneIndex => SceneManager.GetSceneAt(sceneIndex))
+            .Where(scene => scene.isLoaded)
+            .SelectMany(scene => scene.GetRootGameObjects());
+        foreach (var sceneObject in rootSceneObjects) {
+            DependencyInjection.Inject(sceneObject, _dependencyContainer, overrideExisting: false, traverseHierarchy: true);    
         }
-        _lastUpdated = Time.realtimeSinceStartup;
     }
 
     private static DependencyContainer FindDependencies() {

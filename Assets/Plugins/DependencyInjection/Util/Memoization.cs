@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace RamjetAnvil.Util
+namespace RamjetAnvil.DependencyInjection
 {
     public static class Memoization
     {

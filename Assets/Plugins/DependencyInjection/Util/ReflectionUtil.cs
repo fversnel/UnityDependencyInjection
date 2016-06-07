@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RamjetAnvil.Util
+namespace RamjetAnvil.DependencyInjection
 {
     public static class ReflectionUtil
     {

@@ -1,5 +1,6 @@
 ﻿using RamjetAnvil.DependencyInjection;
 using UnityEditor;
+using UnityEngine;
 
 [CustomEditor(typeof(UnityDependencyResolver))]
 public class UnityDependencyResolverEditor : Editor {
@@ -19,6 +20,10 @@ public class UnityDependencyResolverEditor : Editor {
                 }
                 EditorGUILayout.EndHorizontal();
             }
+        }
+
+        if (GUILayout.Button("Resolve dependencies") && instance != null) {
+            instance.Resolve();
         }
     }
 }
