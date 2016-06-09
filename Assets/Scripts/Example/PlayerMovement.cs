@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using RamjetAnvil.DependencyInjection;
 using RamjetAnvil.DITest;
 
-public class PlayerMovement : MonoBehaviour, IOnDependenciesResolved {
+public class PlayerMovement : MonoBehaviour {
 
     [Dependency("gameClock"), SerializeField] private UnityClock _clock;
 
-    void Update() {
-        Debug.Log("update: " + _clock.DeltaTime);
+    void OnEnable() {
+        Debug.Log("PlayerMovement dependencies resolved");
     }
 
-    public void OnDependenciesResolved() {
-        Debug.Log("PlayerMovement dependencies resolved");
+    void Update() {
+        Debug.Log("update: " + _clock.DeltaTime);
     }
 }

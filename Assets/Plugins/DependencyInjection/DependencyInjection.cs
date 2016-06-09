@@ -94,33 +94,30 @@ namespace RamjetAnvil.DependencyInjection {
 
                 ComponentCache.Clear();
                 if (traverseHierarchy) {
-                    gameObject.GetComponentsInChildren<MonoBehaviour>(includeInactive: true, results: ComponentCache);
+                    gameObject.GetComponentsInChildren(includeInactive: true, results: ComponentCache);
                 } else {
-                    gameObject.GetComponents<MonoBehaviour>(results: ComponentCache);
+                    gameObject.GetComponents(results: ComponentCache);
                 }
                 //Debug.Log("Injection on " + gameObject.name + ", components " + ComponentCache.Join(","));
                 for (int i = 0; i < ComponentCache.Count; i++) {
                     var component = ComponentCache[i];
-                    //Debug.Log("injection into " + component);
-                    Inject(component, inject, context, overrideExisting, traverseHierarchy);
+                    if (component != null) {
+                        Inject(component, inject, context, overrideExisting, traverseHierarchy);    
+                    }
                 }
             } else {
                 // TODO Do this for all super types
                 var injectionPoints = GetInjectionPoints(subject.GetType());
                 var allDependenciesResolved = true;
-                var dependenciesInjected = 0;
                 for (int i = 0; i < injectionPoints.Count; i++) {
                     var injectionPoint = injectionPoints[i];
                     // Search dependency for each injection point and inject it
-                    var isInjectionSucceeded = inject(subject, injectionPoint, context, overrideExisting);
-                    if (isInjectionSucceeded) {
-                        dependenciesInjected++;
-                    }
+                    inject(subject, injectionPoint, context, overrideExisting);
                     allDependenciesResolved = allDependenciesResolved && injectionPoint.IsDependencySet(subject);
                 }
-                if (allDependenciesResolved && dependenciesInjected > 0 && (subject as IOnDependenciesResolved) != null) {
-                    Debug.Log("all dependencies resolved for " + subject);
-                    (subject as IOnDependenciesResolved).OnDependenciesResolved();
+
+                if (subject is MonoBehaviour) {
+                    (subject as MonoBehaviour).enabled = allDependenciesResolved;
                 }
             }
         }

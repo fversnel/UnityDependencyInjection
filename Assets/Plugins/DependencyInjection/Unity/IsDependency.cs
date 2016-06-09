@@ -7,10 +7,12 @@ namespace RamjetAnvil.DependencyInjection.Unity {
 
         public string Name {
             get { return _name; }
+            set { _name = value; }
         }
 
         public Component Reference {
             get { return _reference; }
+            set { _reference = value; }
         }
     }
 }

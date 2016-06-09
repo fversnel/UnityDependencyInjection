@@ -18,7 +18,7 @@ namespace RamjetAnvil.DependencyInjection {
         }
         )) {}
 
-        public DependencyContainer(IDictionary<string, object> dependencies) {
+        public DependencyContainer(IEnumerable<KeyValuePair<string, object>> dependencies) {
             _depsByString = new Dictionary<string, DependencyReference>();
             _depsByType = new Dictionary<Type, IList<DependencyReference>>();
 

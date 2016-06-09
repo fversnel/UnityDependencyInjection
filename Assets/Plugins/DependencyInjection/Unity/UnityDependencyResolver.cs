@@ -42,6 +42,7 @@ public class UnityDependencyResolver : MonoBehaviour {
                 var dependencyName = dependency.Name == "" ? dependency.Reference.gameObject.name : dependency.Name;
                 return new SerializableDependencyRef(dependencyName, dependency.Reference);
             })
+            .OrderBy(dependency => dependency.Reference.GetType().FullName)
             .ToList();
     }
 
