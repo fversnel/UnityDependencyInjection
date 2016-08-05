@@ -10,13 +10,7 @@ namespace RamjetAnvil.DependencyInjection {
         private readonly IDictionary<string, DependencyReference> _depsByString;
         private readonly IDictionary<Type, IList<DependencyReference>> _depsByType;
 
-        public DependencyContainer(params object[] objects) : this(objects.ToDictionary((element) => {
-            if (element == null) {
-                throw new ArgumentNullException("One of the given dependencies is null.");
-            }
-            return element.ToString();
-        }
-        )) {}
+        public DependencyContainer() : this(Enumerable.Empty<KeyValuePair<string, object>>()) { }
 
         public DependencyContainer(IEnumerable<KeyValuePair<string, object>> dependencies) {
             _depsByString = new Dictionary<string, DependencyReference>();
@@ -59,5 +53,14 @@ namespace RamjetAnvil.DependencyInjection {
                 deps.Add(dependency);
             }
         }
+
+        public DependencyContainer Copy() {
+            var newContainer = new DependencyContainer();
+            foreach (var dependencyReference in DepsByString.Values) {
+                newContainer.AddDependency(dependencyReference);
+            }
+            return newContainer;
+        }
+
     }
 }

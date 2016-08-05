@@ -11,6 +11,8 @@ public class UnityDependencyResolver : MonoBehaviour {
 
     [SerializeField] private List<SerializableDependencyRef> _dependencies;
 
+    private DependencyContainer _dependencyContainer;
+
     void Awake() {
         Resolve();
     }
@@ -21,9 +23,9 @@ public class UnityDependencyResolver : MonoBehaviour {
     
     public void Resolve() {
         _dependencies = FindDependencies();
-        var dependencyContainer = new DependencyContainer();
+        _dependencyContainer = new DependencyContainer();
         foreach (var dependencyReference in _dependencies) {
-            dependencyContainer.AddDependency(new DependencyReference(dependencyReference.Name, dependencyReference.Reference));
+            _dependencyContainer.AddDependency(new DependencyReference(dependencyReference.Name, dependencyReference.Reference));
         }
 
         var rootSceneObjects = Enumerable.Range(0, SceneManager.sceneCount)
@@ -31,8 +33,13 @@ public class UnityDependencyResolver : MonoBehaviour {
             .Where(scene => scene.isLoaded)
             .SelectMany(scene => scene.GetRootGameObjects());
         foreach (var sceneObject in rootSceneObjects) {
-            DependencyInjection.Inject(sceneObject, dependencyContainer, overrideExisting: false, traverseHierarchy: true);    
+            //Debug.Log("resolving for " + sceneObject);
+            Resolve(sceneObject);
         }
+    }
+
+    public void Resolve(GameObject gameObject) {
+        DependencyInjection.Inject(gameObject, _dependencyContainer, overrideExisting: false, traverseHierarchy: true);
     }
 
     private static List<SerializableDependencyRef> FindDependencies() {
