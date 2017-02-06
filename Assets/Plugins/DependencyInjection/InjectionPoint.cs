@@ -81,7 +81,6 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         public object GetValue(object @this) {
-            UnityEngine.Debug.Log("getting value for " + @this + " property: " + _property);
             return _property.GetGetMethod().Invoke(@this, new object[0]);
         }
 
@@ -110,7 +109,7 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         public override string ToString() {
-            return String.Format("Property({0} {1})", Type, _property.Name);
+            return string.Format("Property({0} {1})", Type, _property.Name);
         }
     }
 }
