@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace RamjetAnvil.DependencyInjection {
 
-    delegate bool Injection<in TDep>(object subject, InjectionPoint injectionPoint, TDep dependencies, bool overrideExisting);
+    public delegate bool Injection<in TDep>(object subject, InjectionPoint injectionPoint, TDep dependencies, bool overrideExisting);
 
     public class DependencyInjector {
 

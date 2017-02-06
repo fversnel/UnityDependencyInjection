@@ -10,22 +10,32 @@ using UnityEngine.SceneManagement;
 public class UnityDependencyResolver : MonoBehaviour {
 
     [SerializeField] private List<SerializableDependencyRef> _dependencies;
+    private IList<DependencyReference> _nonSerializableRefs;
 
     private DependencyContainer _dependencyContainer;
 
     void Awake() {
+        _nonSerializableRefs = _nonSerializableRefs ?? new List<DependencyReference>();
         Resolve();
     }
 
     public List<SerializableDependencyRef> Dependencies {
         get { return _dependencies; }
     }
-    
+
+    public DependencyContainer DependencyContainer {
+        get { return _dependencyContainer; }
+    }
+
     public void Resolve() {
         _dependencies = FindDependencies();
         _dependencyContainer = new DependencyContainer();
         foreach (var dependencyReference in _dependencies) {
             _dependencyContainer.AddDependency(new DependencyReference(dependencyReference.Name, dependencyReference.Reference));
+        }
+        //Debug.Log("non serializable refs " + NonSerializableRefs);
+        foreach (var dependencyReference in NonSerializableRefs) {
+            _dependencyContainer.AddDependency(dependencyReference);
         }
 
         var rootSceneObjects = Enumerable.Range(0, SceneManager.sceneCount)
@@ -64,4 +74,12 @@ public class UnityDependencyResolver : MonoBehaviour {
         }
     }
 
+    public IList<DependencyReference> NonSerializableRefs {
+        get {
+            if (_nonSerializableRefs == null) {
+                _nonSerializableRefs = new List<DependencyReference>();
+            }
+            return _nonSerializableRefs;
+        }
+    }
 }
