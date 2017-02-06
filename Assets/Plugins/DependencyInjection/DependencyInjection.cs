@@ -2,22 +2,83 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace RamjetAnvil.DependencyInjection {
 
-    // TODO Remove overrideExisting bool, it's part of the injector
-    public delegate bool DependencyInjector<in TContext>(
-        object subject, InjectionPoint injectionPoint, TContext context, bool overrideExisting);
+    delegate bool Injection<in TDep>(object subject, InjectionPoint injectionPoint, TDep dependencies, bool overrideExisting);
 
-    public static class DependencyInjection {
+    public class DependencyInjector {
 
-        private static readonly Func<Type, IList<InjectionPoint>> GetInjectionPoints =
+        public static readonly DependencyInjector Default = new DependencyInjector(new List<IInjector> {
+            new GameObjectInjector(traverseHierarchy: true),
+            MonoBehaviourInjector.Default,
+            ObjectInjector.Default
+        });
+        public static readonly DependencyInjector NoHierarchyTraversal = new DependencyInjector(new List<IInjector> {
+            new GameObjectInjector(traverseHierarchy: false),
+            MonoBehaviourInjector.Default,
+            ObjectInjector.Default
+        });
+
+        private readonly IList<IInjector> _injectors;
+
+        public DependencyInjector(IList<IInjector> injectors) {
+            _injectors = injectors;
+        }
+
+        public void InjectSingle(object subject, object dependency, bool overrideExisting = false) {
+            Inject(subject, SingleInjection, dependency, overrideExisting);
+        }
+
+        public void Inject(object subject, DependencyContainer diContainer, bool overrideExisting = false) {
+            Inject(subject, ContainerInjection, diContainer, overrideExisting);
+        }
+
+        public static readonly Func<Type, IList<InjectionPoint>> GetInjectionPoints =
             Memoization.Memoize<Type, IList<InjectionPoint>>(GetInjectionPointsInternal);
+
+        private void Inject<TDep>(object subject, 
+            Injection<TDep> injection, 
+            TDep dependencies,
+            bool overrideExisting) {
+
+            if (subject == null) {
+                throw new ArgumentNullException("Cannot inject on a null object");
+            }
+
+            bool isInjectionFinished = false;
+            for (int i = 0; i < _injectors.Count && !isInjectionFinished; i++) {
+                var injector = _injectors[i];
+                if (injector.IsTypeSupported(subject.GetType())) {
+                    injector.Inject(subject, injection, dependencies, overrideExisting);
+                    isInjectionFinished = true;
+                }
+            }
+        }
+
+        private static readonly Injection<object> SingleInjection =
+            (subject, injectionPoint, dependency, overrideExisting) => {
+                if (injectionPoint.Injector.Type.IsInstanceOfType(dependency)) {
+                    return InjectInternal(injectionPoint, subject, new DependencyReference(name: null, instance: dependency), overrideExisting);
+                }
+                return false;
+            };
+
+        private static readonly Injection<DependencyContainer> ContainerInjection =
+            (subject, injectionPoint, diContainer, overrideExisting) => {
+                bool isSomethingInjected = false;
+                IList<DependencyReference> candidates;
+                if (diContainer.DepsByType.TryGetValue(injectionPoint.Injector.Type, out candidates)) {
+                    for (int i = 0; i < candidates.Count; i++) {
+                        var dependency = candidates[i];
+                        var isInjectionSucceeded = InjectInternal(injectionPoint, subject, dependency, overrideExisting);
+                        if (isInjectionSucceeded) {
+                            isSomethingInjected = true;
+                        }
+                    }
+                }
+                return isSomethingInjected;
+            };
 
         private static IList<InjectionPoint> GetInjectionPointsInternal(Type type) {
             var injectionPoints = new List<InjectionPoint>();
@@ -51,7 +112,7 @@ namespace RamjetAnvil.DependencyInjection {
             return injectionPoints;
         }
 
-        private static bool InjectInternal(this InjectionPoint injectionPoint, object subject, DependencyReference dependency,
+        private static bool InjectInternal(InjectionPoint injectionPoint, object subject, DependencyReference dependency,
             bool overrideExisting) {
 
             var isNameMatch = injectionPoint.Info.Name == null ||
@@ -59,12 +120,7 @@ namespace RamjetAnvil.DependencyInjection {
             var isTypeMatch = injectionPoint.Injector.Type.IsInstanceOfType(dependency.Instance)
                 && injectionPoint.Injector.Info.DeclaringType.IsInstanceOfType(subject);
             var currentValue = injectionPoint.Injector.GetValue(subject);
-            bool isDependencyAlreadySet;
-            if (currentValue is UnityEngine.Object) {
-                isDependencyAlreadySet = (currentValue as UnityEngine.Object) != null;
-            } else {
-                isDependencyAlreadySet = currentValue != null;
-            }
+            var isDependencyAlreadySet = currentValue != null;
 
             if (isNameMatch && isTypeMatch && (!isDependencyAlreadySet || overrideExisting)) {
                 injectionPoint.Injector.SetValue(subject, dependency.Instance);
@@ -72,96 +128,5 @@ namespace RamjetAnvil.DependencyInjection {
             }
             return false;
         }
-
-        private static readonly List<MonoBehaviour> ComponentCache = new List<MonoBehaviour>();
-        public static void Inject<TContext>(object subject, 
-            DependencyInjector<TContext> inject, 
-            TContext context,
-            bool overrideExisting,
-            bool traverseHierarchy) {
-
-            if (subject == null) {
-                throw new ArgumentNullException("Cannot inject on a null component/object");
-            }
-
-            if (subject is GameObject) {
-                var gameObject = subject as GameObject;
-#if UNITY_EDITOR
-                if (IsPrefab(gameObject)) {
-                    throw new ArgumentException("Injecting on Prefab '" + gameObject.name + "' is not allowed.");
-                }
-#endif
-
-                ComponentCache.Clear();
-                if (traverseHierarchy) {
-                    gameObject.GetComponentsInChildren(includeInactive: true, results: ComponentCache);
-                } else {
-                    gameObject.GetComponents(results: ComponentCache);
-                }
-                //Debug.Log("Injection on " + gameObject.name + ", components " + ComponentCache.Join(","));
-                for (int i = 0; i < ComponentCache.Count; i++) {
-                    var component = ComponentCache[i];
-                    if (component != null) {
-                        Inject(component, inject, context, overrideExisting, traverseHierarchy);    
-                    }
-                }
-            } else {
-                // TODO Do this for all super types
-                var injectionPoints = GetInjectionPoints(subject.GetType());
-                var allDependenciesResolved = true;
-                for (int i = 0; i < injectionPoints.Count; i++) {
-                    var injectionPoint = injectionPoints[i];
-                    // Search dependency for each injection point and inject it
-                    inject(subject, injectionPoint, context, overrideExisting);
-                    allDependenciesResolved = allDependenciesResolved && injectionPoint.IsDependencySet(subject);
-                }
-
-                if (subject is MonoBehaviour) {
-                    (subject as MonoBehaviour).enabled = allDependenciesResolved;
-                }
-            }
-        }
-
-        public static void InjectSingle(object subject, object dependency, bool overrideExisting = false, bool traverseHierarchy = true) {
-            Inject(subject, InjectSingleDependency, dependency, overrideExisting, traverseHierarchy);
-        }
-
-        public static void Inject(object subject, DependencyContainer diContainer, bool overrideExisting = false, bool traverseHierarchy = true) {
-            Inject(subject, InjectFromContainer, diContainer, overrideExisting, traverseHierarchy);
-        }
-
-        public static readonly DependencyInjector<object> InjectSingleDependency =
-            (subject, injectionPoint, dependency, overrideExisting) => {
-                if (injectionPoint.Injector.Type.IsInstanceOfType(dependency)) {
-                    return injectionPoint.InjectInternal(subject, new DependencyReference(name: null, instance: dependency), overrideExisting);
-                }
-                return false;
-            };
-
-        public static readonly DependencyInjector<DependencyContainer> InjectFromContainer =
-            (subject, injectionPoint, diContainer, overrideExisting) => {
-                bool isSomethingInjected = false;
-                IList<DependencyReference> candidates;
-                if (diContainer.DepsByType.TryGetValue(injectionPoint.Injector.Type, out candidates)) {
-                    for (int i = 0; i < candidates.Count; i++) {
-                        var dependency = candidates[i];
-                        var isInjectionSucceeded = injectionPoint.InjectInternal(subject, dependency, overrideExisting);
-                        if (isInjectionSucceeded) {
-                            isSomethingInjected = true;
-                        }
-                    }
-                }
-                return isSomethingInjected;
-            };
-
-        public static bool IsDependencySet(this InjectionPoint injectionPoint, object subject) {
-            return injectionPoint.Injector.GetValue(subject) != null;
-        }
-
-#if UNITY_EDITOR
-        private static bool IsPrefab(GameObject go) {
-            return PrefabUtility.GetPrefabParent(go) == null && PrefabUtility.GetPrefabObject(go) != null; // Is a prefab
-        }
-#endif
     }
 }

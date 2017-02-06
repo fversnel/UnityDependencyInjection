@@ -39,7 +39,7 @@ public class UnityDependencyResolver : MonoBehaviour {
     }
 
     public void Resolve(GameObject gameObject) {
-        DependencyInjection.Inject(gameObject, _dependencyContainer, overrideExisting: false, traverseHierarchy: true);
+        DependencyInjector.Default.Inject(gameObject, _dependencyContainer, overrideExisting: false);
     }
 
     private static List<SerializableDependencyRef> FindDependencies() {
