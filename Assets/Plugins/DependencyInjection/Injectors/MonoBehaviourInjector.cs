@@ -23,7 +23,7 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         public bool IsTypeSupported(Type t) {
-            return t.IsAssignableFrom(typeof(MonoBehaviour));
+            return t.IsInstanceOfType(typeof(MonoBehaviour));
         }
 
         private static bool IsDependencySet(InjectionPoint injectionPoint, object subject) {

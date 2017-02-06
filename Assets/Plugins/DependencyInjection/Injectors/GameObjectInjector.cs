@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace RamjetAnvil.DependencyInjection {
 
@@ -20,7 +17,10 @@ namespace RamjetAnvil.DependencyInjection {
             var gameObject = subject as GameObject;
 
             #if UNITY_EDITOR
-            if (IsPrefab(gameObject)) {
+            var isPrefab = UnityEditor.PrefabUtility.GetPrefabParent(gameObject) == null &&
+                           UnityEditor.PrefabUtility.GetPrefabObject(gameObject) != null;
+            if (isPrefab) {
+                Debug.LogError("Injecting on Prefab '" + gameObject.name + "' is not allowed.", gameObject);
                 throw new ArgumentException("Injecting on Prefab '" + gameObject.name + "' is not allowed.");
             }
             #endif
@@ -31,6 +31,7 @@ namespace RamjetAnvil.DependencyInjection {
             } else {
                 gameObject.GetComponents(results: MonoBehaviourCache);
             }
+
             //Debug.Log("Injection on " + gameObject.name + ", components " + ComponentCache.Join(","));
             for (int i = 0; i < MonoBehaviourCache.Count; i++) {
                 var component = MonoBehaviourCache[i];
@@ -43,13 +44,7 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         public bool IsTypeSupported(Type t) {
-            return t.IsAssignableFrom(typeof(GameObject));
+            return t.IsInstanceOfType(typeof(GameObject));
         }
-
-        #if UNITY_EDITOR
-        private static bool IsPrefab(GameObject go) {
-            return PrefabUtility.GetPrefabParent(go) == null && PrefabUtility.GetPrefabObject(go) != null; // Is a prefab
-        }
-        #endif
     }
 }

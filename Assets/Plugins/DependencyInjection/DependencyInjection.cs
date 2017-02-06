@@ -120,7 +120,15 @@ namespace RamjetAnvil.DependencyInjection {
             var isTypeMatch = injectionPoint.Injector.Type.IsInstanceOfType(dependency.Instance)
                 && injectionPoint.Injector.Info.DeclaringType.IsInstanceOfType(subject);
             var currentValue = injectionPoint.Injector.GetValue(subject);
-            var isDependencyAlreadySet = currentValue != null;
+            bool isDependencyAlreadySet;
+            if (currentValue is UnityEngine.Object) {
+                // Unity has its own concept of null which is not equal to C# null.
+                // Destroyed objects can be regarded as null by Unity's != and == checks
+                // but these objects are not C# null references.
+                isDependencyAlreadySet = (currentValue as UnityEngine.Object) != null;
+            } else {
+                isDependencyAlreadySet = currentValue != null;
+            }
 
             if (isNameMatch && isTypeMatch && (!isDependencyAlreadySet || overrideExisting)) {
                 injectionPoint.Injector.SetValue(subject, dependency.Instance);
