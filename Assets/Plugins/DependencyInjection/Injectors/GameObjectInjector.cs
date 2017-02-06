@@ -44,7 +44,7 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         public bool IsTypeSupported(Type t) {
-            return t.IsInstanceOfType(typeof(GameObject));
+            return t.IsAssignableFrom(typeof(GameObject));
         }
     }
 }

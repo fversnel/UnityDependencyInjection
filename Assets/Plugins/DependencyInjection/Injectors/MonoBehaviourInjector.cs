@@ -27,7 +27,11 @@ namespace RamjetAnvil.DependencyInjection {
         }
 
         private static bool IsDependencySet(InjectionPoint injectionPoint, object subject) {
-            return injectionPoint.Injector.GetValue(subject) != null;
+            object storedValue = injectionPoint.Injector.GetValue(subject);
+            if (storedValue is UnityEngine.Object) {
+                return (storedValue as UnityEngine.Object) != null;
+            }
+            return storedValue != null;
         }
     }
 }
